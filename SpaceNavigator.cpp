@@ -892,22 +892,42 @@ void SpaceNavigator::reset_spaceNav() {
 			gyro_y = ypr[2] * 180 / M_PI;
 			Orientation_angle = ypr[0] * 180 / M_PI;
 
+			
+			//read and tamper x
+			tempADC = adcVal.Read(x_sensor);
+
+			if (ADCPosX > tempADC) {
+				ADCPosX -= ((ADCPosX - tempADC) * rate);
+			}
+			else if (ADCPosX < tempADC) {
+				ADCPosX += ((tempADC - ADCPosX) * rate);
+			}
+			//read and tamper y
+			tempADC = adcVal.Read(y_sensor);
+
+			if (ADCPosY > tempADC) {
+				ADCPosY -= ((ADCPosY - tempADC) * rate);
+			}
+			else if (ADCPosY < tempADC) {
+				ADCPosY += ((tempADC - ADCPosY) * rate);
+			}
+
 			if (recaliberate) {
 				if (gyro_x < 0.30 && gyro_x > -0.30 & gyro_y < 0.30 && gyro_y > -0.30) { //update planar origin
-					tempread = adcVal.Read(x_sensor);
-					if (tempread < (idealorigin + bound) && tempread > (idealorigin - bound)) {//value is within allowed range
-						X_origin = tempread;
+					//tempread = adcVal.Read(x_sensor);
+					if (ADCPosX < (idealorigin + bound) && ADCPosX > (idealorigin - bound)) {//value is within allowed range
+						X_origin = ADCPosX;
 					}
-					tempread = adcVal.Read(y_sensor);
-					if (tempread < (idealorigin + bound) && tempread >(idealorigin - bound)) {//value is within allowed range
-						Y_origin = tempread;
+					//tempread = adcVal.Read(y_sensor);
+					if (ADCPosY < (idealorigin + bound) && ADCPosY >(idealorigin - bound)) {//value is within allowed range
+						Y_origin = ADCPosY;
 					}
 				}
 			}
 			
 
-			flatplane_x = (X_origin - adcVal.Read(x_sensor)) / scalingfactor;
-			flatplane_y = (adcVal.Read(y_sensor) - Y_origin) / scalingfactor;
+			flatplane_x = (X_origin - ADCPosX) / scalingfactor;
+			flatplane_y = (ADCPosY - Y_origin) / scalingfactor;
 
 			if (Orientation_angle < 0) {
 				Orientation_angle = Orientation_angle * (-1);
@@ -924,20 +944,43 @@ void SpaceNavigator::reset_spaceNav() {
 		if (fifoCount >= packetSize ) {
 			fifoCount = 0;
 		}
+
+		//read and tamper x
+		tempADC = adcVal.Read(x_sensor);
+
+		if (ADCPosX > tempADC) {
+			ADCPosX -= ((ADCPosX - tempADC) * rate);
+		}
+		else if (ADCPosX < tempADC) {
+			ADCPosX += ((tempADC - ADCPosX) * rate);
+		}
+		//read and tamper y
+		tempADC = adcVal.Read(y_sensor);
+
+		if (ADCPosY > tempADC) {
+			ADCPosY -= ((ADCPosY - tempADC) * rate);
+		}
+		else if (ADCPosY < tempADC) {
+			ADCPosY += ((tempADC - ADCPosY) * rate);
+		}
+
+
 		if (recaliberate) {
 			if (gyro_x < 0.30 && gyro_x > -0.30 & gyro_y < 0.30 && gyro_y > -0.30) { //update planar origin
-				tempread = adcVal.Read(x_sensor);
-				if (tempread < (idealorigin + bound) && tempread >(idealorigin - bound)) {//value is within allowed range
-					X_origin = tempread;
+				//tempread = adcVal.Read(x_sensor);
+				if (ADCPosX < (idealorigin + bound) && ADCPosX >(idealorigin - bound)) {//value is within allowed range
+					X_origin = ADCPosX;
 				}
-				tempread = adcVal.Read(y_sensor);
-				if (tempread < (idealorigin + bound) && tempread >(idealorigin - bound)) {//value is within allowed range
-					Y_origin = tempread;
+				//tempread = adcVal.Read(y_sensor);
+				if (ADCPosY < (idealorigin + bound) && ADCPosY >(idealorigin - bound)) {//value is within allowed range
+					Y_origin = ADCPosY;
 				}
 			}
 		}
-		flatplane_x = (X_origin - adcVal.Read(x_sensor)) / scalingfactor;
-		flatplane_y = (adcVal.Read(y_sensor) - Y_origin) / scalingfactor;
+
+
+		flatplane_x = (X_origin - ADCPosX) / scalingfactor;
+		flatplane_y = (ADCPosY - Y_origin) / scalingfactor;
 		
 	}
 	/*
