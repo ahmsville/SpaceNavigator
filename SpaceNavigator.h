@@ -68,8 +68,11 @@ private:
 	float ypr[3];           // [yaw, pitch, roll]   yaw/pitch/roll container and gravity vector
 /******************************************************************************************************************************************/
 	float gyro_x = 0, gyro_y = 0, flatplane_x = 0, flatplane_y = 0, Orientation_angle = 0, Orientation_angleoffset = 0;  // holds raw values from gyro and hall sensors
-	float X_origin = 512.00, Y_origin = 512.00, tempread, idealorigin = 540, bound = 120;  //defines center for hall effect sensors.
+	float X_origin = 512.00, Y_origin = 512.00, ADCPosX = 0, ADCPosY = 0, tempread, tempADC = 0, idealorigin = 540, bound = 120;  //defines center for hall effect sensors.
 	float scalingfactor = 10.00; //maximum distance(analog value) from origin / desired x,y scale
+
+	float rate = 0.1;
+
 	int x_sensor, y_sensor;  //hall effect sensor arduino pins
 	float Planar_XY_coordinate[3] , Gyro_XY_coordinate[3];  //holds adjusted x,y values for gyro, hall sensor and corresponding calculated radius. 
 	bool tilt[4], slide[4]; //holds tilt and slide identifiers
