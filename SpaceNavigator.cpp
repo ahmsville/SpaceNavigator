@@ -459,7 +459,7 @@ bool *SpaceNavigator::get_Tilt() {
 		}
 
 		//translate adjustedangle to tilt movements
-		if (radius >= tilt_minradius) {
+		if (radius >= (2)) {
 			if (adjustedangle <= tiltandslide_range && adjustedangle >= 0 || adjustedangle >= (360 - tiltandslide_range) && adjustedangle <= 360) {  //tilt right
 				haptics(1);
 				tilt[0] = 1;
@@ -549,7 +549,7 @@ bool *SpaceNavigator::get_Tilt() {
 			}
 		}
 		//translate adjustedangle to tilt movements
-		if (radius >= tilt_minradius) {
+		if (radius >= (2)) {
 			if (adjustedangle <= tiltandslide_range && adjustedangle >= 0 || adjustedangle >= (360 - tiltandslide_range) && adjustedangle <= 360) {  //tilt right
 				haptics(1);
 				tilt[0] = 1;
@@ -674,7 +674,7 @@ bool *SpaceNavigator::get_Slide() {
 			}
 		}
 		//translate adjustedangle to slide movements
-		if (radius >= slide_minradius) {
+		if (radius >= (3)) {
 			if (adjustedangle <= tiltandslide_range && adjustedangle >= 0 || adjustedangle >= (360 - tiltandslide_range) && adjustedangle <= 360) {  //slide right
 				haptics(1);
 				slide[0] = 1;
@@ -764,7 +764,7 @@ bool *SpaceNavigator::get_Slide() {
 			}
 		}
 		//translate adjustedangle to slide movements
-		if (radius >= slide_minradius) {
+		if (radius >= (3)) {
 			if (adjustedangle <= tiltandslide_range && adjustedangle >= 0 || adjustedangle >= (360 - tiltandslide_range) && adjustedangle <= 360) {  //slide right
 				haptics(1);
 				slide[0] = 1;
@@ -894,34 +894,41 @@ void SpaceNavigator::reset_spaceNav() {
 
 			
 			//read and tamper x
-			tempADC = adcVal.Read(x_sensor);
+			ADCPosX = (adcVal.Read(x_sensor) + (ADCPosX * (averages - 1))) / averages;
 
+			/*
+			tempADC = adcVal.Read(x_sensor);
 			if (ADCPosX > tempADC) {
 				ADCPosX -= ((ADCPosX - tempADC) * rate);
 			}
 			else if (ADCPosX < tempADC) {
 				ADCPosX += ((tempADC - ADCPosX) * rate);
 			}
+			*/
 			//read and tamper y
-			tempADC = adcVal.Read(y_sensor);
+			ADCPosY = (adcVal.Read(y_sensor) + (ADCPosY * (averages - 1))) / averages;
 
+			/*
+			tempADC = adcVal.Read(y_sensor);
 			if (ADCPosY > tempADC) {
 				ADCPosY -= ((ADCPosY - tempADC) * rate);
 			}
 			else if (ADCPosY < tempADC) {
 				ADCPosY += ((tempADC - ADCPosY) * rate);
 			}
+			*/
 
 			if (recaliberate) {
-				if (gyro_x < 0.30 && gyro_x > -0.30 & gyro_y < 0.30 && gyro_y > -0.30) { //update planar origin
-					//tempread = adcVal.Read(x_sensor);
-					if (ADCPosX < (idealorigin + bound) && ADCPosX > (idealorigin - bound)) {//value is within allowed range
-						X_origin = ADCPosX;
+				if (gyro_x < 0.70 && gyro_x > -0.70 || gyro_y < 0.70 && gyro_y > -0.70) { //update planar origin
+					tempread = adcVal.Read(x_sensor);
+					if (tempread < (idealorigin + bound) && tempread >(idealorigin - bound)) {//value is within allowed range
+						X_origin = tempread;
 					}
-					//tempread = adcVal.Read(y_sensor);
-					if (ADCPosY < (idealorigin + bound) && ADCPosY >(idealorigin - bound)) {//value is within allowed range
-						Y_origin = ADCPosY;
+					tempread = adcVal.Read(y_sensor);
+					if (tempread < (idealorigin + bound) && tempread >(idealorigin - bound)) {//value is within allowed range
+						Y_origin = tempread;
 					}
+					recaliberate = false;
 				}
 			}
 			
@@ -946,35 +953,41 @@ void SpaceNavigator::reset_spaceNav() {
 		}
 
 		//read and tamper x
-		tempADC = adcVal.Read(x_sensor);
+		ADCPosX = (adcVal.Read(x_sensor) + (ADCPosX * (averages - 1))) / averages;
 
+		/*
+		tempADC = adcVal.Read(x_sensor);
 		if (ADCPosX > tempADC) {
 			ADCPosX -= ((ADCPosX - tempADC) * rate);
 		}
 		else if (ADCPosX < tempADC) {
 			ADCPosX += ((tempADC - ADCPosX) * rate);
 		}
+		*/
 		//read and tamper y
-		tempADC = adcVal.Read(y_sensor);
+		ADCPosY = (adcVal.Read(y_sensor) + (ADCPosY * (averages - 1))) / averages;
 
+		/*
+		tempADC = adcVal.Read(y_sensor);
 		if (ADCPosY > tempADC) {
 			ADCPosY -= ((ADCPosY - tempADC) * rate);
 		}
 		else if (ADCPosY < tempADC) {
 			ADCPosY += ((tempADC - ADCPosY) * rate);
 		}
-
+		*/
 
 		if (recaliberate) {
-			if (gyro_x < 0.30 && gyro_x > -0.30 & gyro_y < 0.30 && gyro_y > -0.30) { //update planar origin
-				//tempread = adcVal.Read(x_sensor);
-				if (ADCPosX < (idealorigin + bound) && ADCPosX >(idealorigin - bound)) {//value is within allowed range
-					X_origin = ADCPosX;
+			if (gyro_x < 0.70 && gyro_x > -0.70 || gyro_y < 0.70 && gyro_y > -0.70) { //update planar origin
+				tempread = adcVal.Read(x_sensor);
+				if (tempread < (idealorigin + bound) && tempread >(idealorigin - bound)) {//value is within allowed range
+					X_origin = tempread;
 				}
-				//tempread = adcVal.Read(y_sensor);
-				if (ADCPosY < (idealorigin + bound) && ADCPosY >(idealorigin - bound)) {//value is within allowed range
-					Y_origin = ADCPosY;
+				tempread = adcVal.Read(y_sensor);
+				if (tempread < (idealorigin + bound) && tempread >(idealorigin - bound)) {//value is within allowed range
+					Y_origin = tempread;
 				}
+				recaliberate = false;
 			}
 		}
 
