@@ -42,7 +42,7 @@ THE SOFTWARE.
 
 
 #define INTERRUPT_PIN 2  // use pin 2 on Arduino Uno & most boards
-#define LED_PIN 13 // (Arduino is 13, Teensy is 11, Teensy++ is 6)
+//#define LED_PIN 13 // (Arduino is 13, Teensy is 11, Teensy++ is 6)
 
 
 
@@ -67,12 +67,17 @@ private:
 	float euler[3];         // [psi, theta, phi]    Euler angle container
 	float ypr[3];           // [yaw, pitch, roll]   yaw/pitch/roll container and gravity vector
 /******************************************************************************************************************************************/
+	float adcresolution = 4095;
 	float gyro_x = 0, gyro_y = 0, flatplane_x = 0, flatplane_y = 0, Orientation_angle = 0, Orientation_angleoffset = 0;  // holds raw values from gyro and hall sensors
-	float X_origin = 512.00, Y_origin = 512.00, ADCPosX = 0, ADCPosY = 0, tempread, tempADC = 0, idealorigin = 540, bound = 50;  //defines center for hall effect sensors.
-	float scalingfactor = 10.00; //maximum distance(analog value) from origin / desired x,y scale
-
-	int averages = 30;
+	float X_origin = adcresolution/2, Y_origin = adcresolution / 2, ADCPosX = 0, ADCPosY = 0, tempread, tempADC = 0, idealorigin = 2047, bound = 700;  //defines center for hall effect sensors.
+	float scalingfactor = 200.00, gyroscalingfactor = 10; //maximum distance(analog value) from origin / desired x,y scale
+	float tiltmin = 3;
+	float slidemin = 3;
 	float rate = 0.07;
+	int tempADCPosX = 0, tempADCPosY = 0;
+	float prevADCPosX = 0, prevADCPosY = 0;
+	float S_alpha = 0.1, S_alpha2 = 0.001, smallvaluerange = 10, diff = 0;
+
 
 	int x_sensor, y_sensor;  //hall effect sensor arduino pins
 	float Planar_XY_coordinate[3] , Gyro_XY_coordinate[3];  //holds adjusted x,y values for gyro, hall sensor and corresponding calculated radius. 
@@ -83,8 +88,9 @@ private:
 	int haptics_pin = 0, haptics_duration = 0, haptics_strength = 0, haptics_ontime, haptics_offtime, haptics_state;
 	bool recaliberate = true;
 	
+	float gyrocenterrange = 4;
 
-	ADCRead adcVal = ADCRead();
+	ADCRead adcVal = ADCRead(12);
 
 public:
 
@@ -104,6 +110,7 @@ public:
 	void haptics(int state);
 	void recaliberateOrigin(bool rec);
 	int getadc(int pin);
+	float showplanecoordinats();
 
 };
 

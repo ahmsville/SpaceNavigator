@@ -459,7 +459,7 @@ bool *SpaceNavigator::get_Tilt() {
 		}
 
 		//translate adjustedangle to tilt movements
-		if (radius >= (2)) {
+		if (radius >= (tiltmin)) {
 			if (adjustedangle <= tiltandslide_range && adjustedangle >= 0 || adjustedangle >= (360 - tiltandslide_range) && adjustedangle <= 360) {  //tilt right
 				haptics(1);
 				tilt[0] = 1;
@@ -549,7 +549,7 @@ bool *SpaceNavigator::get_Tilt() {
 			}
 		}
 		//translate adjustedangle to tilt movements
-		if (radius >= (2)) {
+		if (radius >= (tiltmin)) {
 			if (adjustedangle <= tiltandslide_range && adjustedangle >= 0 || adjustedangle >= (360 - tiltandslide_range) && adjustedangle <= 360) {  //tilt right
 				haptics(1);
 				tilt[0] = 1;
@@ -674,7 +674,7 @@ bool *SpaceNavigator::get_Slide() {
 			}
 		}
 		//translate adjustedangle to slide movements
-		if (radius >= (3)) {
+		if (radius >= (slidemin)) {
 			if (adjustedangle <= tiltandslide_range && adjustedangle >= 0 || adjustedangle >= (360 - tiltandslide_range) && adjustedangle <= 360) {  //slide right
 				haptics(1);
 				slide[0] = 1;
@@ -764,7 +764,7 @@ bool *SpaceNavigator::get_Slide() {
 			}
 		}
 		//translate adjustedangle to slide movements
-		if (radius >= (3)) {
+		if (radius >= (slidemin)) {
 			if (adjustedangle <= tiltandslide_range && adjustedangle >= 0 || adjustedangle >= (360 - tiltandslide_range) && adjustedangle <= 360) {  //slide right
 				haptics(1);
 				slide[0] = 1;
@@ -888,38 +888,49 @@ void SpaceNavigator::reset_spaceNav() {
 			mpu.dmpGetQuaternion(&q, fifoBuffer);
 			mpu.dmpGetGravity(&gravity, &q);
 			mpu.dmpGetYawPitchRoll(ypr, &q, &gravity);
-			gyro_x = ypr[1] * 180 / M_PI;
-			gyro_y = ypr[2] * 180 / M_PI;
+			gyro_x = ypr[1] * 180 / M_PI * gyroscalingfactor;
+			gyro_y = ypr[2] * 180 / M_PI * gyroscalingfactor;
 			Orientation_angle = ypr[0] * 180 / M_PI;
 
 			
 			//read and tamper x
-			ADCPosX = (adcVal.Read(x_sensor) + (ADCPosX * (averages - 1))) / averages;
-
-			/*
-			tempADC = adcVal.Read(x_sensor);
-			if (ADCPosX > tempADC) {
-				ADCPosX -= ((ADCPosX - tempADC) * rate);
+			tempADCPosX = adcVal.Read(x_sensor);
+			diff = prevADCPosX - tempADCPosX;
+			if (diff < 0)
+			{
+				diff *= -1;
 			}
-			else if (ADCPosX < tempADC) {
-				ADCPosX += ((tempADC - ADCPosX) * rate);
+			if (diff < smallvaluerange)
+			{
+				ADCPosX = (tempADCPosX * S_alpha2) + (prevADCPosX * (1 - S_alpha2));
+				prevADCPosX = ADCPosX;
 			}
-			*/
+			else {
+				ADCPosX = (tempADCPosX * S_alpha) + (prevADCPosX * (1 - S_alpha));
+				prevADCPosX = ADCPosX;
+			}
+			
+		
 			//read and tamper y
-			ADCPosY = (adcVal.Read(y_sensor) + (ADCPosY * (averages - 1))) / averages;
-
-			/*
-			tempADC = adcVal.Read(y_sensor);
-			if (ADCPosY > tempADC) {
-				ADCPosY -= ((ADCPosY - tempADC) * rate);
+			tempADCPosY = adcVal.Read(y_sensor);
+			diff = prevADCPosY - tempADCPosY;
+			if (diff < 0)
+			{
+				diff *= -1;
 			}
-			else if (ADCPosY < tempADC) {
-				ADCPosY += ((tempADC - ADCPosY) * rate);
+			if (diff < smallvaluerange)
+			{
+				ADCPosY = (tempADCPosY * S_alpha2) + (prevADCPosY * (1 - S_alpha2));
+				prevADCPosY = ADCPosY;
 			}
-			*/
+			else {
+				ADCPosY = (tempADCPosY * S_alpha) + (prevADCPosY * (1 - S_alpha));
+				prevADCPosY = ADCPosY;
+			}
+			
 
 			if (recaliberate) {
-				if (gyro_x < 0.70 && gyro_x > -0.70 || gyro_y < 0.70 && gyro_y > -0.70) { //update planar origin
+				if (gyro_x < gyrocenterrange && gyro_x > -1 * gyrocenterrange || gyro_y < gyrocenterrange && gyro_y > -1 * gyrocenterrange) { //update planar origin
 					tempread = adcVal.Read(x_sensor);
 					if (tempread < (idealorigin + bound) && tempread >(idealorigin - bound)) {//value is within allowed range
 						X_origin = tempread;
@@ -933,8 +944,17 @@ void SpaceNavigator::reset_spaceNav() {
 			}
 			
 
-			flatplane_x = (X_origin - ADCPosX) / scalingfactor;
-			flatplane_y = (ADCPosY - Y_origin) / scalingfactor;
+
+			//flatplane_x = (X_origin - ADCPosX) / scalingfactor;
+			//flatplane_y = (ADCPosY - Y_origin) / scalingfactor;
+
+			/************************For Inverted Directions***********************/
+			//if your slide moves are inverted, uncomment this 
+
+			flatplane_x = (ADCPosX - X_origin) / scalingfactor;
+			flatplane_y = (Y_origin - ADCPosY) / scalingfactor;
+
+			/**********************************************************************/
 
 			if (Orientation_angle < 0) {
 				Orientation_angle = Orientation_angle * (-1);
@@ -953,32 +973,42 @@ void SpaceNavigator::reset_spaceNav() {
 		}
 
 		//read and tamper x
-		ADCPosX = (adcVal.Read(x_sensor) + (ADCPosX * (averages - 1))) / averages;
+		tempADCPosX = adcVal.Read(x_sensor);
+		diff = prevADCPosX - tempADCPosX;
+		if (diff < 0)
+		{
+			diff *= -1;
+		}
+		if (diff < smallvaluerange)
+		{
+			ADCPosX = (tempADCPosX * S_alpha2) + (prevADCPosX * (1 - S_alpha2));
+			prevADCPosX = ADCPosX;
+		}
+		else {
+			ADCPosX = (tempADCPosX * S_alpha) + (prevADCPosX * (1 - S_alpha));
+			prevADCPosX = ADCPosX;
+		}
 
-		/*
-		tempADC = adcVal.Read(x_sensor);
-		if (ADCPosX > tempADC) {
-			ADCPosX -= ((ADCPosX - tempADC) * rate);
-		}
-		else if (ADCPosX < tempADC) {
-			ADCPosX += ((tempADC - ADCPosX) * rate);
-		}
-		*/
+
 		//read and tamper y
-		ADCPosY = (adcVal.Read(y_sensor) + (ADCPosY * (averages - 1))) / averages;
-
-		/*
-		tempADC = adcVal.Read(y_sensor);
-		if (ADCPosY > tempADC) {
-			ADCPosY -= ((ADCPosY - tempADC) * rate);
+		tempADCPosY = adcVal.Read(y_sensor);
+		diff = prevADCPosY - tempADCPosY;
+		if (diff < 0)
+		{
+			diff *= -1;
 		}
-		else if (ADCPosY < tempADC) {
-			ADCPosY += ((tempADC - ADCPosY) * rate);
+		if (diff < smallvaluerange)
+		{
+			ADCPosY = (tempADCPosY * S_alpha2) + (prevADCPosY * (1 - S_alpha2));
+			prevADCPosY = ADCPosY;
 		}
-		*/
+		else {
+			ADCPosY = (tempADCPosY * S_alpha) + (prevADCPosY * (1 - S_alpha));
+			prevADCPosY = ADCPosY;
+		}
 
 		if (recaliberate) {
-			if (gyro_x < 0.70 && gyro_x > -0.70 || gyro_y < 0.70 && gyro_y > -0.70) { //update planar origin
+			if (gyro_x < gyrocenterrange && gyro_x > -1*gyrocenterrange || gyro_y < gyrocenterrange && gyro_y > -1* gyrocenterrange) { //update planar origin
 				tempread = adcVal.Read(x_sensor);
 				if (tempread < (idealorigin + bound) && tempread >(idealorigin - bound)) {//value is within allowed range
 					X_origin = tempread;
@@ -992,14 +1022,23 @@ void SpaceNavigator::reset_spaceNav() {
 		}
 
 
-		flatplane_x = (X_origin - ADCPosX) / scalingfactor;
-		flatplane_y = (ADCPosY - Y_origin) / scalingfactor;
+		//flatplane_x = (X_origin - ADCPosX) / scalingfactor;
+		//flatplane_y = (ADCPosY - Y_origin) / scalingfactor;
+
+		/************************For Inverted Directions***********************/
+		//if your slide moves are inverted, uncomment this 
+
+		flatplane_x = (ADCPosX - X_origin) / scalingfactor;
+		flatplane_y = (Y_origin - ADCPosY) / scalingfactor;
+
+		/**********************************************************************/
 		
 	}
 	/*
 	SerialUSB.print(X_origin);
 	SerialUSB.print("\t");
 	SerialUSB.print(Y_origin);
+
 	SerialUSB.print("\t");
 	SerialUSB.print(flatplane_x);
 	SerialUSB.print("\t");
@@ -1033,4 +1072,9 @@ void SpaceNavigator::recaliberateOrigin(bool rec) {
 }
 int SpaceNavigator::getadc(int pin) {
 	return adcVal.Read(pin);
+}
+float SpaceNavigator::showplanecoordinats() {
+	//SerialUSB.print(ADCPosX);
+	//SerialUSB.print("\t");
+	//SerialUSB.println(ADCPosY);
 }
